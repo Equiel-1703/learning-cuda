@@ -6,6 +6,7 @@
 *.fatbin
 
 # HIP stuff and binaries
+bin/
 hip/
 obj/
 *.hip
