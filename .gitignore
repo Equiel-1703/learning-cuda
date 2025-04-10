@@ -5,5 +5,8 @@
 *.cubin
 *.fatbin
 
+# HIP stuff and binaries
+hip/
+obj/
 *.hip
 *.out
