@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "../common/include/Tools.hpp"
-#include "../common/include/GPUTimer.hpp"
+#include "../common/include/CPUTimer.hpp"
 
 #define VEC_SIZE 60'000
 #define NUM_ELEMENTS_PREVIEW 10
@@ -20,7 +20,7 @@ int main()
 {
     // Criando vetores na CPU e medidor de tempo da GPU
     int a[VEC_SIZE], b[VEC_SIZE], c[VEC_SIZE];
-    GPUTimer timer;
+    CPUTimer timer;
 
     // Preenchendo vetores
     for (int i = 0; i < VEC_SIZE; i++)
@@ -40,13 +40,16 @@ int main()
     CHECK_ERROR(cudaMemcpy(vec_1, a, sizeof(a), cudaMemcpyKind::cudaMemcpyHostToDevice));
     CHECK_ERROR(cudaMemcpy(vec_2, b, sizeof(b), cudaMemcpyKind::cudaMemcpyHostToDevice));
 
-    // Chamando kernel para realizar a computação. Estou lançando um bloco para cada elemento do vetor.
+    // Iniciando timer
     timer.start_timer();
+
+    // Chamando kernel para realizar a computação. Estou lançando um bloco para cada elemento do vetor.
     vec_sum<<<VEC_SIZE, 1>>>(vec_1, vec_2, vec_3);
 
     CHECK_ERROR(cudaDeviceSynchronize());
 
-    float time_taken = timer.stop_timer();
+    // Parando timer
+    timer.stop_timer();
 
     // Copiando o resultado pra CPU
     CHECK_ERROR(cudaMemcpy(c, vec_3, sizeof(c), cudaMemcpyKind::cudaMemcpyDeviceToHost));
@@ -73,7 +76,10 @@ int main()
     std::cout << "..." << std::endl;
 
     std::cout << "Número de elementos: " << VEC_SIZE << std::endl;
-    std::cout << "Tempo de execução: " << time_taken << " ms" << std::endl;
+    std::cout << "Tempo de execução: "
+              << timer.get_elapsed_time_ns() << " ns / "
+              << timer.get_elapsed_time_ms() << " ms"
+              << std::endl;
 
     // Liberando memória
     CHECK_ERROR(cudaFree(vec_1));
