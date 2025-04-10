@@ -1,9 +1,6 @@
-#pragma once
+#include "../include/Tools.hpp"
 
-#include <iostream>
-#include <cuda_runtime.h>
-
-void check_error(cudaError_t err_code, const char *file, int line)
+void Tools::check_error(cudaError_t err_code, const char *file, int line)
 {
     if (err_code != cudaSuccess)
     {
@@ -13,5 +10,3 @@ void check_error(cudaError_t err_code, const char *file, int line)
         exit(-1);
     }
 }
-
-#define CHECK_ERROR(err_call) check_error(err_call, __FILE__, __LINE__);
