@@ -1,6 +1,7 @@
 #include <iostream>
 
-#include "../common/tools.hpp"
+#include "../common/include/Tools.hpp"
+#include "../common/include/GPUTimer.hpp"
 
 #define VEC_SIZE 10'000
 
@@ -16,8 +17,9 @@ __global__ void vec_sum(int *vec_1, int *vec_2, int *vec_3)
 
 int main()
 {
-    // Criando vetores na CPU
+    // Criando vetores na CPU e medidor de tempo da GPU
     int a[VEC_SIZE], b[VEC_SIZE], c[VEC_SIZE];
+    GPUTimer timer;
 
     // Preenchendo vetores
     for (int i = 0; i < VEC_SIZE; i++)
@@ -38,9 +40,12 @@ int main()
     CHECK_ERROR(cudaMemcpy(vec_2, a, sizeof(b), cudaMemcpyKind::cudaMemcpyHostToDevice));
 
     // Chamando kernel para realizar a computação. Estou lançando um bloco para cada elemento do vetor.
+    timer.start_timer();
     vec_sum<<<VEC_SIZE, 1>>>(vec_1, vec_2, vec_3);
-
+    
     CHECK_ERROR(cudaDeviceSynchronize());
+
+    float time_taken = timer.stop_timer();
 
     // Copiando o resultado pra CPU
     CHECK_ERROR(cudaMemcpy(c, vec_3, sizeof(c), cudaMemcpyKind::cudaMemcpyDeviceToHost));
@@ -51,6 +56,8 @@ int main()
         std::cout << c[i] << " ";
     }
     std::cout << "..." << std::endl;
+
+    std::cout << "Tempo de execução: " << time_taken << " ms" << std::endl;
 
     // Liberando memória
     CHECK_ERROR(cudaFree(vec_1));
