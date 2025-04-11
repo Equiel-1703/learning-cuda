@@ -2,7 +2,7 @@
 
 #include "../common/include/CPUTimer.hpp"
 
-#define VEC_SIZE 60'000
+#define VEC_SIZE 600'000
 #define NUM_ELEMENTS_PREVIEW 10
 
 int main(int argc, char const *argv[])
