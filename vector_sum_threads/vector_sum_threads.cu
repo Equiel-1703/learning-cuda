@@ -10,7 +10,7 @@
 
 __global__ void vec_sum(int *vec_1, int *vec_2, int *vec_3)
 {
-    int vec_index = threadIdx.x;
+    int vec_index = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (vec_index < VEC_SIZE)
     {
@@ -59,21 +59,21 @@ int main()
     CHECK_ERROR(cudaMemcpy(c, vec_3, sizeof(c), cudaMemcpyKind::cudaMemcpyDeviceToHost));
 
     std::cout << "A: ";
-    for (int i = 0; i < NUM_ELEMENTS_PREVIEW; i++)
+    for (int i = 510; i < NUM_ELEMENTS_PREVIEW + 510; i++)
     {
         std::cout << a[i] << " ";
     }
     std::cout << "..." << std::endl;
 
     std::cout << "B: ";
-    for (int i = 0; i < NUM_ELEMENTS_PREVIEW; i++)
+    for (int i = 510; i < NUM_ELEMENTS_PREVIEW + 510; i++)
     {
         std::cout << b[i] << " ";
     }
     std::cout << "..." << std::endl;
 
     std::cout << "C: ";
-    for (int i = 0; i < NUM_ELEMENTS_PREVIEW; i++)
+    for (int i = 510; i < NUM_ELEMENTS_PREVIEW + 510; i++)
     {
         std::cout << c[i] << " ";
     }
