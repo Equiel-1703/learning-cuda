@@ -11,13 +11,10 @@
 #define THREADS_PER_AXIS 32
 #define MAX_BLOCKS 6
 
-using std::complex;
-using std::cout, std::cerr, std::endl;
-
 __device__ unsigned int run_iterations(double real, double img)
 {
-    complex<double> z(real, img);
-    const complex<double> c(-0.8, 0.156);
+    std::complex<double> z(real, img);
+    const std::complex<double> c(-0.8, 0.156);
 
     unsigned int it = 1;
 
@@ -75,7 +72,7 @@ int main(int argc, char const *argv[])
 {
     if (argc != 2)
     {
-        cerr << "USAGE: " << argv[0] << " <image_size_px>" << endl;
+        std::cerr << "USAGE: " << argv[0] << " <image_size_px>" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -84,7 +81,7 @@ int main(int argc, char const *argv[])
 
     if (IMG_SIZE < 10)
     {
-        cerr << "ERROR: Image size must be at least 10x10 pixels." << endl;
+        std::cerr << "ERROR: Image size must be at least 10x10 pixels." << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -92,6 +89,11 @@ int main(int argc, char const *argv[])
     uint8_t *img, *img_device;
 
     img = new uint8_t[IMG_PIXELS * 3];
+    if (img == nullptr)
+    {
+        std::cerr << "ERROR: Memory allocation failed." << std::endl;
+        return EXIT_FAILURE;
+    }
 
     CHECK_ERROR(cudaMalloc(&img_device, sizeof(uint8_t) * IMG_PIXELS * 3));
     CHECK_ERROR(cudaMalloc(&IMG_SIZE_DEV, sizeof(int)));
@@ -124,9 +126,9 @@ int main(int argc, char const *argv[])
 
     bmp_img.save();
 
-    cout << "BLOCKS: " << BLOCKS << "x" << BLOCKS << "(" << BLOCKS * BLOCKS << ")" << endl;
-    cout << "THREADS: " << THREADS_PER_AXIS << "x" << THREADS_PER_AXIS << "(" << THREADS_PER_AXIS * THREADS_PER_AXIS << ")" << endl;
-    cout << "IMG SIZE: " << IMG_SIZE << "x" << IMG_SIZE << endl;
+    std::cout << "BLOCKS: " << BLOCKS << "x" << BLOCKS << "(" << BLOCKS * BLOCKS << ")" << std::endl;
+    std::cout << "THREADS: " << THREADS_PER_AXIS << "x" << THREADS_PER_AXIS << "(" << THREADS_PER_AXIS * THREADS_PER_AXIS << ")" << std::endl;
+    std::cout << "IMG SIZE: " << IMG_SIZE << "x" << IMG_SIZE << std::endl;
 
     // Cleaning memory
     CHECK_ERROR(cudaFree(img_device));
