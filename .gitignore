@@ -12,6 +12,9 @@ obj/
 *.hip
 *.out
 
+# VSCode settings
+.vscode/
+
 # Images
 *.png
 *.jpg
