@@ -85,4 +85,6 @@ void BMP::save()
     {
         this->file.write((char *)&this->pixelData[y * this->rowSizeBytes], this->rowSizeBytes);
     }
+
+    std::cout << "BMP file saved: " << this->filename << std::endl;
 }
