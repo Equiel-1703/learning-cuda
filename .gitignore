@@ -11,3 +11,10 @@ hip/
 obj/
 *.hip
 *.out
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.gif
