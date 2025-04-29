@@ -80,17 +80,17 @@ public:
         return Vector(x / len, y / len, z / len);
     }
 
-    __device__ Vector operator+(const Vector &other) const
+    __host__ __device__ Vector operator+(const Vector &other) const
     {
         return Vector(x + other.x, y + other.y, z + other.z);
     }
 
-    __device__ Vector operator-(const Vector &other) const
+    __host__ __device__ Vector operator-(const Vector &other) const
     {
         return Vector(x - other.x, y - other.y, z - other.z);
     }
 
-    __device__ Vector &operator=(const Vector &other)
+    __host__ __device__ Vector &operator=(const Vector &other)
     {
         if (this != &other)
         {

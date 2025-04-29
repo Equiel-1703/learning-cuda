@@ -13,4 +13,14 @@ struct Color
     {
         return Color(r * scalar, g * scalar, b * scalar);
     }
+
+    __host__ __device__ Color operator+(const Color &other) const
+    {
+        return Color(r + other.r, g + other.g, b + other.b);
+    }
+
+    __host__ __device__ Color operator-(const Color &other) const
+    {
+        return Color(r - other.r, g - other.g, b - other.b);
+    }
 };

@@ -14,6 +14,9 @@ private:
     Color color;
 
 public:
+    __host__ __device__ Sphere()
+        : center(Vector(0.0, 0.0, 0.0)), radius(1.0), color(Color(1.0, 1.0, 1.0)) {} // Default sphere
+
     __host__ __device__ Sphere(Vector center, double radius, Color color)
         : center(center), radius(radius), color(color) {}
 
@@ -23,6 +26,17 @@ public:
     __host__ __device__ ~Sphere()
     {
         // Destructor logic if needed
+    }
+
+    __host__ __device__ Sphere &operator=(const Sphere &other)
+    {
+        if (this != &other)
+        {
+            center = other.center;
+            radius = other.radius;
+            color = other.color;
+        }
+        return *this;
     }
 
     __device__ Vector getCenter() const
@@ -40,10 +54,25 @@ public:
         return color;
     }
 
+    __host__ __device__ void setCenter(const Vector &center)
+    {
+        this->center = center;
+    }
+
+    __host__ __device__ void setRadius(double radius)
+    {
+        this->radius = radius;
+    }
+
+    __host__ __device__ void setColor(const Color &color)
+    {
+        this->color = color;
+    }
+
     __device__ double hitDistance(const Vector &rayDirection) const
     {
         // Here we are assuming that the ray starts at the origin (0, 0, 0)
-        Vector L = center.scale(1.0);
+        Vector L = center.scale(-1.0);
 
         // Calculate the coefficients of the quadratic equation
         // We omit a since it is always 1 for normalized rayDirection
