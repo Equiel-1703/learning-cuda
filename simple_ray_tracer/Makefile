@@ -1,57 +1,77 @@
-HIP_FOLDER = hip
-BIN_FOLDER = bin
-
-OBJS_FOLDER = obj
+# === Variables ===
+SRC_DIRS := include_src
+HIP_DIR := hip
+OBJ_DIR := obj
+BIN_DIR := bin
 COMMON_OBJS_FOLDER = ../common/obj
 
-INCLUDE_SRC_FOLDER = include_src
-INCLUDE_FOLDER = include
-INCLUDE_FLAG = -I$(INCLUDE_FOLDER)
+# Include directories
+INCLUDE_DIRS := include
 
-SRCS_CU = $(wildcard *.cu)
-SRCS_CPP = $(wildcard *.cpp)
-INCLUDES_SRCS = $(wildcard $(INCLUDE_SRC_FOLDER)/*.cpp)
+# Find all .cpp and .cu files in the source directories
+SRCS := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp $(dir)/*.cu))
+SRCS += $(wildcard *.cpp *.cu)
 
-HIPS = $(patsubst %.cu,$(HIP_FOLDER)/%.hip,$(SRCS_CU)) $(patsubst %.cpp,$(HIP_FOLDER)/%.hip,$(SRCS_CPP))
-HIPS += $(patsubst %.cpp,$(HIP_FOLDER)/%.hip,$(notdir $(INCLUDES_SRCS)))
+# Find all .hpp files in the source include directories (we need them to hipify)
+# Note: This assumes that all .hpp files are in the include directory
+INCLUDES_FILES := $(foreach dir,$(INCLUDE_DIRS),$(wildcard $(dir)/*.hpp))
 
-OBJS = $(patsubst %.hip,$(OBJS_FOLDER)/%.o,$(notdir $(HIPS)))
+# Replace .cpp/.cu by .o and prepend obj/ (keep path structure)
+OBJS := $(patsubst %, $(OBJ_DIR)/%, $(patsubst %.cpp,%.o,$(patsubst %.cu,%.o,$(SRCS))))
+
 COMMON_OBJS = $(wildcard $(COMMON_OBJS_FOLDER)/*.o)
 
-BIN = $(patsubst %.cu,$(BIN_FOLDER)/%.out,$(SRCS_CU)) $(patsubst %.cpp,$(BIN_FOLDER)/%.out,$(SRCS_CPP))
+# Replace .cpp/.cu by .hip and prepend hip/ (keep path structure)
+HIPS := $(patsubst %, $(HIP_DIR)/%, $(patsubst %.cpp,%.hip,$(patsubst %.cu,%.hip,$(SRCS))))
+HIPS_INCLUDES := $(INCLUDES_FILES:%.hpp=$(HIP_DIR)/%.hpp)
 
-HIPIFY = hipify-clang
-CLANG_FLAGS = -std=c++17
+# Compiler and flags
+CXX := hipcc
+CXXFLAGS := -Wall -Wextra -std=c++17
+HIPIFY := hipify-clang
 
-COMPILER = hipcc
+# TARGET
+TARGET := $(BIN_DIR)/simple_ray_tracer.out
 
-.PHONY: create_folders
+# === Rules ===
 
-all: create_folders $(HIPS) $(OBJS) $(BIN)
-
-$(BIN_FOLDER)/%.out: $(OBJS)
-	@echo "Linking $@"
-	$(COMPILER) $(CLANG_FLAGS) -o $@ $(OBJS) $(COMMON_OBJS)
-
-$(OBJS_FOLDER)/%.o: $(HIP_FOLDER)/%.hip
-	@echo "Compiling $<"
-	$(COMPILER) $(CLANG_FLAGS) -c $< -o $@ $(INCLUDE_FLAG)
+# Default rule
+all: $(HIPS) $(HIPS_INCLUDES) $(OBJS) $(TARGET)
 
 define HIPIFY_RULE
-$(HIP_FOLDER)/%.hip: %.$(1)
-	@echo "Hipifying $$<"
-	$$(HIPIFY) $$< -o $$@ $$(INCLUDE_FLAG) -- $$(CLANG_FLAGS)
+$(HIP_DIR)/%.hip: %.$(1)
+	@echo "Hipifying $$< into $$@"
+	@mkdir -p $$(dir $$@)
+	$$(HIPIFY) $$< -o $$@ -- $$(CXXFLAGS)
 	@sed -i 's@\.\./common/include/@../common/hip/@g' $$@
 endef
 
 $(eval $(call HIPIFY_RULE,cu))
 $(eval $(call HIPIFY_RULE,cpp))
 
-create_folders:
-	@echo "Creating folders"
-	@mkdir -p $(HIP_FOLDER) $(BIN_FOLDER) $(OBJS_FOLDER)
+# Rule to hipify all .hpp files
+$(HIP_DIR)/%.hpp: %.hpp
+	@echo "Hipifying HEADER $< into $@"
+	@mkdir -p $(dir $@)
+	$(HIPIFY) $< -o $@ -- $(CXXFLAGS)
+	@sed -i 's@\.\./common/include/@../common/hip/@g' $@
 
+# Rule to build each .o file
+$(OBJ_DIR)/%.o: $(HIP_DIR)/%.hip
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Rule to build the final executable
+$(TARGET): $(OBJS)
+	@mkdir -p $(dir $@)
+	@echo "Linking $@"
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(COMMON_OBJS)
+
+# Clean rule
 clean:
-	rm -f $(HIP_FOLDER)/*
-	rm -f $(OBJS_FOLDER)/*
-	rm -f $(BIN_FOLDER)/*
+	rm -rf $(OBJ_DIR)/*
+	rm -rf $(HIP_DIR)/*
+	rm -rf $(BIN_DIR)/*
+
+# Optional: pseudo-targets
+.PHONY: all clean
