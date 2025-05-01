@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Tools.hpp"
+
 #include <cuda_runtime.h>
 
 class GPUTimer
