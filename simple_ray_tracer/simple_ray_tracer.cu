@@ -113,7 +113,12 @@ int main(int argc, char const *argv[])
     dim3 grid(xBlocks, yBlocks, 1);
     dim3 threads(THREADS, THREADS, 1);
 
+    GPUTimer timer;
+    timer.start_timer();
+
     renderKernel<<<grid, threads>>>(bitmapDevice, spheresDevice);
+
+    float time_taken = timer.stop_timer();
 
     CHECK_ERROR(cudaDeviceSynchronize());
 
@@ -131,9 +136,18 @@ int main(int argc, char const *argv[])
     }
     image.save();
 
+    std::cout << std::endl;
+    std::cout << "Time taken: " << time_taken << " ms" << std::endl;
+    std::cout << "Threads per block: " << THREADS << std::endl;
+    std::cout << "xBlocks: " << xBlocks << " yBlocks: " << yBlocks << std::endl;
+    std::cout << std::endl;
+    std::cout << "Spheres: " << NUM_SPHERES << std::endl;
+    std::cout << "Image dimensions: " << WIDTH << "x" << HEIGHT << std::endl;
+
     CHECK_ERROR(cudaFree(bitmapDevice));
     CHECK_ERROR(cudaFree(spheresDevice));
 
+    delete[] spheres;
     delete[] bitmap;
 
     return 0;
