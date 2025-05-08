@@ -46,6 +46,24 @@ __global__ void reduceKernel(unsigned long long *input, unsigned long long *outp
     }
 }
 
+__global__ void reduceKernelNoCache(unsigned long long *input, unsigned long long *output)
+{
+    const int idx = threadIdx.x + blockIdx.x * blockDim.x * 2;
+
+    if (idx >= N)
+    {
+        return;
+    }
+
+    unsigned long long sum = input[idx];
+    if (idx + blockDim.x < N)
+    {
+        sum += input[idx + blockDim.x];
+    }
+
+    atomicAdd(output, sum);
+}
+
 void reduceCPU()
 {
     unsigned long long *elements, result;
@@ -103,6 +121,48 @@ void reducePinned(const int threads)
     timer.start_timer();
 
     reduceKernel<<<blocks, threads>>>(devElements, devResult);
+
+    CHECK_ERROR(cudaDeviceSynchronize());
+
+    float elapsed = timer.stop_timer();
+
+    unsigned long long expectedResult = arithmSum(N, 0, N - 1);
+
+    std::cout << "Number of blocks: " << blocks << std::endl;
+    std::cout << "Number of threads: " << threads << std::endl;
+    std::cout << "Number of elements: " << N << std::endl;
+
+    std::cout << "\nResult: " << (*result) << std::endl;
+    std::cout << "Expected: " << expectedResult << std::endl;
+    std::cout << "Difference (should be 0): " << (*result) - expectedResult << std::endl;
+
+    std::cout << "\nElapsed time: " << elapsed << " ms" << std::endl;
+
+    CHECK_ERROR(cudaFreeHost(hostElements));
+    CHECK_ERROR(cudaFreeHost(result));
+}
+
+void reducePinnedNoCache(const int threads)
+{
+    unsigned long long *hostElements, *result, *devElements, *devResult;
+
+    CHECK_ERROR(cudaHostAlloc((void **)&hostElements, N * sizeof(unsigned long long), cudaHostAllocMapped | cudaHostAllocWriteCombined));
+    CHECK_ERROR(cudaHostAlloc((void **)&result, sizeof(unsigned long long), cudaHostAllocMapped));
+
+    for (int i = 0; i < N; i++)
+    {
+        hostElements[i] = i;
+    }
+
+    CHECK_ERROR(cudaHostGetDevicePointer((void **)&devElements, (void *)hostElements, 0));
+    CHECK_ERROR(cudaHostGetDevicePointer((void **)&devResult, (void *)result, 0));
+
+    const int blocks = (N + (threads * 2) - 1) / (threads * 2);
+
+    GPUTimer timer;
+    timer.start_timer();
+
+    reduceKernelNoCache<<<blocks, threads>>>(devElements, devResult);
 
     CHECK_ERROR(cudaDeviceSynchronize());
 
@@ -225,6 +285,11 @@ int main()
               << std::endl;
 
     reducePinned(prop.maxThreadsPerBlock);
+
+    std::cout << "\n================== Reduce GPU (pinned memory, no cache) ==================\n"
+              << std::endl;
+
+    reducePinnedNoCache(prop.maxThreadsPerBlock);
 
     return 0;
 }
